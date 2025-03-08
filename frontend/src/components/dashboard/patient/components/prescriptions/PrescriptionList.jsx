@@ -27,19 +27,24 @@ const PrescriptionList = () => {
       const patientId = localStorage.getItem('userId');
       console.log('Fetching prescriptions for patient:', patientId);
 
-      const response = await fetch(`http://localhost:8080/api/prescriptions/patient/${patientId}`);
-      const data = await response.json();
-      
-      console.log('Fetched prescriptions:', data);
+      const response = await fetch(`http://localhost:8080/api/prescriptions/patient/${patientId}`, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
-      if (response.ok) {
-        setPrescriptions(data);
-      } else {
-        throw new Error(data.message || 'Failed to fetch prescriptions');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error('Failed to fetch prescriptions');
       }
+
+      const data = await response.json();
+      console.log('Fetched prescriptions:', data);
+      setPrescriptions(data);
     } catch (error) {
       console.error('Error:', error);
-      setError('Failed to load prescriptions');
+      setError('Failed to load prescriptions: ' + error.message);
     } finally {
       setLoading(false);
     }

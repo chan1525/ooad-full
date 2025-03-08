@@ -18,10 +18,16 @@ import AppointmentList from './components/dashboard/patient/components/appointme
 import AppointmentBooking from './components/dashboard/patient/components/appointments/AppointmentBooking';
 import Profile from './components/dashboard/patient/components/profile/Profile';
 import MedicalRecords from './components/dashboard/patient/components/medical-records/MedicalRecords';
+import PrescriptionList from './components/dashboard/patient/components/prescriptions/PrescriptionList';
+import Payments from './components/dashboard/patient/components/payments/Payments';
 
 // Staff Components
 import StaffPatientList from './components/dashboard/staff/components/patients/PatientList';
 import StaffAppointmentList from './components/dashboard/staff/components/appointments/StaffAppointmentList';
+
+// Doctor Components
+import DoctorAppointmentList from './components/dashboard/doctor/components/appointments/DoctorAppointmentList';
+import DoctorProfile from './components/dashboard/doctor/components/profile/DoctorProfile';
 
 function App() {
   return (
@@ -40,11 +46,15 @@ function App() {
         <Route path="appointments/book" element={<AppointmentBooking />} />
         <Route path="medical-records" element={<MedicalRecords />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="prescriptions" element={<PrescriptionList />} />
+        <Route path="payments" element={<Payments />} />
       </Route>
 
       {/* Doctor Routes */}
       <Route path="/doctor/dashboard" element={<DoctorDashboardLayout />}>
         <Route index element={<DoctorDashboard />} />
+        <Route path="appointments" element={<DoctorAppointmentList />} />
+        <Route path="profile" element={<DoctorProfile />} />
       </Route>
 
       {/* Staff Routes */}

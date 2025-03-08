@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.HashMap;
+import com.hospitalcrm.hospital_crm.exception.ResourceNotFoundException;
 
 @Service
 public class UserService {
@@ -81,5 +82,10 @@ public class UserService {
         response.put("role", user.getRole());
 
         return response;
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 }

@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 const AppointmentList = () => {
   const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
+  const [doctors, setDoctors] = useState([]);
   const [openReschedule, setOpenReschedule] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [newDate, setNewDate] = useState('');
@@ -44,30 +45,42 @@ const AppointmentList = () => {
         throw new Error('User ID not found');
       }
 
-      const response = await fetch(`http://localhost:8080/api/staff/appointments/patient/${patientId}`, {
+      const response = await fetch(`http://localhost:8080/api/appointments/patient/${patientId}`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Server response:', errorData);
-        throw new Error(`Server responded with ${response.status}: ${errorData}`);
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error('Failed to fetch appointments');
       }
 
       const data = await response.json();
       console.log('Received appointments:', data);
       setAppointments(data);
     } catch (error) {
-      console.error('Full error details:', error);
+      console.error('Error fetching appointments:', error);
       setError('Error fetching appointments: ' + error.message);
+    }
+  };
+
+  const fetchDoctors = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/doctors');
+      if (response.ok) {
+        const data = await response.json();
+        setDoctors(data);
+      }
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
     }
   };
 
   useEffect(() => {
     fetchAppointments();
+    fetchDoctors();
   }, []);
 
   const handleCancel = async (appointmentId) => {
@@ -76,19 +89,20 @@ const AppointmentList = () => {
         const response = await fetch(`http://localhost:8080/api/appointments/${appointmentId}/cancel`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            // Add any authentication headers if needed
           }
         });
         
         if (response.ok) {
-          showSnackbar('Appointment cancelled successfully', 'success');
-          fetchAppointments();
+          setSnackbar({ open: true, message: 'Appointment cancelled successfully', severity: 'success' });
+          fetchAppointments(); // Refresh the list
         } else {
-          showSnackbar('Failed to cancel appointment', 'error');
+          setSnackbar({ open: true, message: 'Failed to cancel appointment', severity: 'error' });
         }
       } catch (error) {
         console.error('Error cancelling appointment:', error);
-        showSnackbar('Error cancelling appointment', 'error');
+        setSnackbar({ open: true, message: 'Error cancelling appointment', severity: 'error' });
       }
     }
   };
@@ -102,45 +116,57 @@ const AppointmentList = () => {
 
   const handleReschedule = async () => {
     try {
+      // Convert date and time to proper format
+      const formattedDate = newDate; // Should be in YYYY-MM-DD format
+      const formattedTime = newTime; // Should be in HH:mm format
+
       const response = await fetch(`http://localhost:8080/api/appointments/${selectedAppointment.id}/reschedule`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          newDate,
-          newTime
+          newDate: formattedDate,
+          newTime: formattedTime
         })
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         setOpenReschedule(false);
-        showSnackbar('Appointment rescheduled successfully', 'success');
-        fetchAppointments();
+        setSnackbar({
+          open: true,
+          message: 'Appointment rescheduled successfully',
+          severity: 'success'
+        });
+        fetchAppointments(); // Refresh the list
       } else {
-        showSnackbar('Failed to reschedule appointment', 'error');
+        console.error('Server error:', data);
+        setSnackbar({
+          open: true,
+          message: data.message || 'Failed to reschedule appointment',
+          severity: 'error'
+        });
       }
     } catch (error) {
-      console.error('Error rescheduling appointment:', error);
-      showSnackbar('Error rescheduling appointment', 'error');
+      console.error('Error:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error connecting to server',
+        severity: 'error'
+      });
     }
   };
 
-  const showSnackbar = (message, severity) => {
-    setSnackbar({
-      open: true,
-      message,
-      severity
-    });
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
+  const getDoctorName = (doctorId) => {
+    const doctor = doctors.find(d => d.id === doctorId);
+    return doctor ? `Dr. ${doctor.name}` : 'Unknown Doctor';
   };
 
   const getStatusColor = (status) => {
     switch (status?.toUpperCase()) {
-      case 'UPCOMING':
+      case 'SCHEDULED':
         return 'primary';
       case 'COMPLETED':
         return 'success';
@@ -180,19 +206,19 @@ const AppointmentList = () => {
             <TableBody>
               {appointments.map((appointment) => (
                 <TableRow key={appointment.id}>
-                  <TableCell>{appointment.doctorName}</TableCell>
+                  <TableCell>{getDoctorName(appointment.doctorId)}</TableCell>
                   <TableCell>{appointment.department}</TableCell>
                   <TableCell>{appointment.appointmentDate}</TableCell>
                   <TableCell>{appointment.appointmentTime}</TableCell>
                   <TableCell>
                     <Chip
-                      label={appointment.status}
+                      label={appointment.status || 'SCHEDULED'}
                       color={getStatusColor(appointment.status)}
                       size="small"
                     />
                   </TableCell>
                   <TableCell>
-                    {appointment.status?.toUpperCase() === 'UPCOMING' && (
+                    {appointment.status === 'SCHEDULED' && (
                       <>
                         <Button
                           size="small"
@@ -223,28 +249,28 @@ const AppointmentList = () => {
           <DialogTitle>Reschedule Appointment</DialogTitle>
           <DialogContent>
             <TextField
-              margin="dense"
-              label="New Date"
+              label="Date"
               type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
               value={newDate}
               onChange={(e) => setNewDate(e.target.value)}
+              fullWidth
+              margin="normal"
+              InputLabelProps={{ shrink: true }}
             />
             <TextField
-              margin="dense"
-              label="New Time"
+              label="Time"
               type="time"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
               value={newTime}
               onChange={(e) => setNewTime(e.target.value)}
+              fullWidth
+              margin="normal"
+              InputLabelProps={{ shrink: true }}
             />
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenReschedule(false)}>Cancel</Button>
             <Button onClick={handleReschedule} color="primary">
-              Confirm
+              Reschedule
             </Button>
           </DialogActions>
         </Dialog>
@@ -253,14 +279,9 @@ const AppointmentList = () => {
         <Snackbar
           open={snackbar.open}
           autoHideDuration={6000}
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
         >
-          <Alert
-            onClose={handleCloseSnackbar}
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
-          >
+          <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
             {snackbar.message}
           </Alert>
         </Snackbar>
