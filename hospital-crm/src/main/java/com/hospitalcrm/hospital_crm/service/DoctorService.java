@@ -14,7 +14,7 @@ public class DoctorService {
     private AppointmentRepository appointmentRepository;
 
     public List<Appointment> getDoctorAppointments(Long doctorId) {
-        return appointmentRepository.findByDoctor_IdOrderByAppointmentDateDesc(doctorId);
+        return appointmentRepository.findByDoctorId(doctorId);
     }
 
     public List<User> getDoctorPatients(Long doctorId) {

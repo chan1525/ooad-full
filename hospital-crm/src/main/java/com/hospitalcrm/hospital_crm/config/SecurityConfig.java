@@ -24,12 +24,15 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/appointments/**").permitAll()
+                .requestMatchers("/api/appointments/*/cancel").permitAll()
                 .requestMatchers("/api/medical-records/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/staff/**").permitAll()
                 .requestMatchers("/api/doctors/**").permitAll()
                 .requestMatchers("/api/patients/**").permitAll()
                 .requestMatchers("/api/prescriptions/**").permitAll()
+                .requestMatchers("/api/payments/**").permitAll()
+                .requestMatchers("/api/users/**").permitAll()
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

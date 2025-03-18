@@ -9,10 +9,10 @@ import java.util.List;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
-    List<Appointment> findByPatient_Id(Long patientId);
-    List<Appointment> findByDoctor_Id(Long doctorId);
-    List<Appointment> findByDoctor_IdOrderByAppointmentDateDesc(Long doctorId);
+    List<Appointment> findByPatientIdAndPaidFalse(Long patientId);
+    List<Appointment> findByDoctorId(Long doctorId);
+    List<Appointment> findByPatientId(Long patientId);
     
-    @Query("SELECT DISTINCT a.patient FROM Appointment a WHERE a.doctor.id = :doctorId")
+    @Query("SELECT DISTINCT u FROM User u JOIN Appointment a ON u.id = a.patientId WHERE a.doctorId = :doctorId")
     List<User> findDistinctPatientsByDoctorId(Long doctorId);
 }

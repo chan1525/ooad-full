@@ -36,25 +36,36 @@ public class AppointmentService {
     public Appointment bookAppointment(Appointment appointment, Long patientId) {
         User patient = userRepository.findById(patientId)
             .orElseThrow(() -> new RuntimeException("Patient not found"));
-        appointment.setPatient(patient);
+        appointment.setPatientId(patientId);
+        appointment.setPatientName(patient.getName());
         return appointmentRepository.save(appointment);
     }
 
     public List<Appointment> getPatientAppointments(Long patientId) {
-        return appointmentRepository.findByPatient_Id(patientId);
+        return appointmentRepository.findByPatientId(patientId);
     }
 
     public List<Appointment> getDoctorAppointments(Long doctorId) {
-        return appointmentRepository.findByDoctor_Id(doctorId);
+        List<Appointment> appointments = appointmentRepository.findByDoctorId(doctorId);
+        
+        // Enhance appointments with patient email
+        for (Appointment appointment : appointments) {
+            User patient = userRepository.findById(appointment.getPatientId())
+                .orElse(null);
+            if (patient != null) {
+                appointment.setPatientEmail(patient.getEmail()); // We'll add this field
+            }
+        }
+        
+        return appointments;
     }
 
     public void cancelAppointment(Long id) {
-        Optional<Appointment> appointmentOpt = appointmentRepository.findById(id);
-        if (appointmentOpt.isPresent()) {
-            Appointment appointment = appointmentOpt.get();
-            appointment.setStatus(AppointmentStatus.CANCELLED);
-            appointmentRepository.save(appointment);
-        }
+        Appointment appointment = appointmentRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
+        
+        appointment.setStatus(Appointment.Status.CANCELLED);
+        appointmentRepository.save(appointment);
     }
 
     public Appointment rescheduleAppointment(Long id, String newDate, String newTime) {
@@ -69,7 +80,7 @@ public class AppointmentService {
     }
 
     public List<Appointment> getAppointmentsWithDetails(Long doctorId) {
-        List<Appointment> appointments = appointmentRepository.findByDoctor_Id(doctorId);
+        List<Appointment> appointments = appointmentRepository.findByDoctorId(doctorId);
         for (Appointment appointment : appointments) {
             User patient = userRepository.findById(appointment.getPatientId()).orElse(null);
             if (patient != null) {
@@ -118,8 +129,26 @@ public class AppointmentService {
         return appointmentRepository.save(appointment);
     }
 
-    public Appointment createAppointment(Appointment appointment) {
-        appointment.setStatus(AppointmentStatus.SCHEDULED);
+    public Appointment createAppointment(Appointment appointment, Long patientId, Long doctorId) {
+        User patient = userRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("Patient not found"));
+        User doctor = userRepository.findById(doctorId)
+                .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+        appointment.setPatientId(patientId);
+        appointment.setDoctorId(doctorId);
+        appointment.setPatientName(patient.getName());
+        appointment.setDoctorName(doctor.getName());
+        appointment.setStatus(Appointment.Status.SCHEDULED);
+        
+        return appointmentRepository.save(appointment);
+    }
+
+    public Appointment updateAppointmentStatus(Long id, AppointmentStatus newStatus) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        
+        appointment.setStatus(Appointment.Status.valueOf(newStatus.name()));
         return appointmentRepository.save(appointment);
     }
 

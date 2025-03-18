@@ -56,27 +56,11 @@ public class AppointmentController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createAppointment(@RequestBody AppointmentRequest request) {
-        try {
-            Appointment appointment = new Appointment();
-            User patient = userService.getUserById(request.getPatientId());
-            User doctor = userService.getUserById(request.getDoctorId());
-            
-            appointment.setPatient(patient);
-            appointment.setDoctor(doctor);
-            appointment.setDepartment(request.getDepartment());
-            appointment.setAppointmentDate(request.getAppointmentDate());
-            appointment.setAppointmentTime(request.getAppointmentTime());
-            appointment.setStatus(AppointmentStatus.SCHEDULED);
-            appointment.setPatientName(patient.getName());
-            appointment.setDoctorName(doctor.getName());
-            appointment.setReason(request.getReason());
-
-            Appointment savedAppointment = appointmentService.createAppointment(appointment);
-            return ResponseEntity.ok(savedAppointment);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error creating appointment");
-        }
+    public ResponseEntity<Appointment> createAppointment(@RequestBody Appointment appointment,
+                                                       @RequestParam Long patientId,
+                                                       @RequestParam Long doctorId) {
+        Appointment savedAppointment = appointmentService.createAppointment(appointment, patientId, doctorId);
+        return ResponseEntity.ok(savedAppointment);
     }
 
     @PutMapping("/{id}")
@@ -115,7 +99,7 @@ public class AppointmentController {
     public ResponseEntity<?> getPatientAppointments(@PathVariable Long patientId) {
         try {
             System.out.println("Fetching appointments for patient: " + patientId);
-            List<Appointment> appointments = appointmentRepository.findByPatient_Id(patientId);
+            List<Appointment> appointments = appointmentRepository.findByPatientId(patientId);
             System.out.println("Found appointments: " + appointments);
             return ResponseEntity.ok(appointments);
         } catch (Exception e) {
@@ -128,9 +112,15 @@ public class AppointmentController {
     public ResponseEntity<?> cancelAppointment(@PathVariable Long id) {
         try {
             appointmentService.cancelAppointment(id);
-            return ResponseEntity.ok().build();
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Appointment cancelled successfully");
+            response.put("status", "success");
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error cancelling appointment: " + e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Error cancelling appointment: " + e.getMessage());
+            errorResponse.put("status", "error");
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 
@@ -148,28 +138,28 @@ public class AppointmentController {
     @GetMapping("/doctor/{doctorId}")
     public ResponseEntity<?> getDoctorAppointments(@PathVariable Long doctorId) {
         try {
-            List<Appointment> appointments = appointmentRepository.findByDoctor_Id(doctorId);
+            List<Appointment> appointments = appointmentRepository.findByDoctorId(doctorId);
             return ResponseEntity.ok(appointments);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Error fetching appointments");
         }
     }
 
-    @PutMapping("/{appointmentId}/status")
-    public ResponseEntity<?> updateAppointmentStatus(
-            @PathVariable Long appointmentId,
-            @RequestBody StatusUpdateRequest statusRequest) {
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Appointment> updateAppointmentStatus(@PathVariable Long id,
+                                                             @RequestParam AppointmentStatus status) {
+        Appointment updatedAppointment = appointmentService.updateAppointmentStatus(id, status);
+        return ResponseEntity.ok(updatedAppointment);
+    }
+
+    @GetMapping("/unpaid/{patientId}")
+    public ResponseEntity<?> getUnpaidAppointments(@PathVariable Long patientId) {
         try {
-            Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new RuntimeException("Appointment not found"));
-            
-            appointment.setStatus(AppointmentStatus.valueOf(statusRequest.getStatus()));
-            appointmentRepository.save(appointment);
-            
-            return ResponseEntity.ok(appointment);
+            List<Appointment> unpaidAppointments = appointmentRepository.findByPatientIdAndPaidFalse(patientId);
+            return ResponseEntity.ok(unpaidAppointments);
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Error updating status: " + e.getMessage());
+            return ResponseEntity.internalServerError()
+                .body("Error fetching unpaid appointments: " + e.getMessage());
         }
     }
 }

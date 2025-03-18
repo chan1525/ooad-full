@@ -1,10 +1,12 @@
 package com.hospitalcrm.hospital_crm.controller;
 
+import com.hospitalcrm.hospital_crm.model.Payment;
+import com.hospitalcrm.hospital_crm.model.Appointment;
+import com.hospitalcrm.hospital_crm.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.hospitalcrm.hospital_crm.model.Payment;
-import com.hospitalcrm.hospital_crm.repository.PaymentRepository;
+
 import java.util.List;
 
 @RestController
@@ -13,11 +15,23 @@ import java.util.List;
 public class PaymentController {
 
     @Autowired
-    private PaymentRepository paymentRepository;
+    private PaymentService paymentService;
 
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<Payment>> getPatientPayments(@PathVariable Long patientId) {
-        List<Payment> payments = paymentRepository.findByPatient_IdOrderByPaymentDateDesc(patientId);
+        List<Payment> payments = paymentService.getPatientPayments(patientId);
         return ResponseEntity.ok(payments);
+    }
+
+    @PostMapping
+    public ResponseEntity<Payment> createPayment(@RequestBody Payment payment) {
+        Payment savedPayment = paymentService.processPayment(payment);
+        return ResponseEntity.ok(savedPayment);
+    }
+
+    @GetMapping("/appointments/unpaid/{patientId}")
+    public ResponseEntity<List<Appointment>> getUnpaidAppointments(@PathVariable Long patientId) {
+        List<Appointment> unpaidAppointments = paymentService.getUnpaidAppointments(patientId);
+        return ResponseEntity.ok(unpaidAppointments);
     }
 } 

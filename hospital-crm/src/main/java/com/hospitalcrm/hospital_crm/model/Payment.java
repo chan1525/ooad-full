@@ -2,8 +2,7 @@ package com.hospitalcrm.hospital_crm.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.time.LocalDate;
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payments")
@@ -13,13 +12,39 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "patient_id")
-    private User patient;
+    @Column(name = "patient_id", nullable = false)
+    private Long patientId;
 
-    private BigDecimal amount;
-    private LocalDate paymentDate;
+    private Double amount;
+
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate;
+
     private String description;
-    private String paymentStatus; // PAID, PENDING, FAILED
-    private String paymentType;   // CONSULTATION, MEDICINE, LAB_TEST, etc.
+
+    @Column(name = "payment_status")
+    private String paymentStatus;
+
+    @Column(name = "payment_type")
+    private String paymentType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method")
+    private PaymentMethod paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status;
+
+    @Column(name = "appointment_id")
+    private Long appointmentId;
+
+    // Payment method enum
+    public enum PaymentMethod {
+        CASH, CARD, UPI
+    }
+
+    // Payment status enum
+    public enum PaymentStatus {
+        PENDING, COMPLETED, FAILED
+    }
 } 

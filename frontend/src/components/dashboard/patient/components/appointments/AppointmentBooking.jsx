@@ -81,23 +81,25 @@ const AppointmentBooking = () => {
     
     try {
         const patientId = localStorage.getItem('userId');
+        const doctorId = formData.doctorId;
         
         // Log the form data before sending
         console.log('Form Data:', formData);
         
+        // Create appointment data
         const appointmentData = {
-            patientId: parseInt(patientId),
-            doctorId: parseInt(formData.doctorId),
             department: formData.department,
             appointmentDate: formData.appointmentDate,
             appointmentTime: formData.appointmentTime,
-            reason: formData.reason
+            reason: formData.reason,
+            status: 'SCHEDULED'  // Add default status
         };
 
         // Log the actual data being sent
         console.log('Sending Data:', appointmentData);
 
-        const response = await fetch('http://localhost:8080/api/appointments', {
+        // Notice the change in URL structure - adding query parameters
+        const response = await fetch(`http://localhost:8080/api/appointments?patientId=${patientId}&doctorId=${doctorId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -111,20 +113,16 @@ const AppointmentBooking = () => {
         console.log('Response Text:', responseText);
 
         if (!response.ok) {
-            let errorData;
-            try {
-                errorData = JSON.parse(responseText);
-                console.error('Error Data:', errorData);
-            } catch (e) {
-                console.error('Raw Error:', responseText);
-            }
-            throw new Error(errorData?.message || 'Failed to book appointment');
+            throw new Error(responseText || 'Failed to book appointment');
         }
 
+        // If successful, parse the response and navigate
+        const appointmentResponse = responseText ? JSON.parse(responseText) : null;
+        console.log('Appointment booked successfully:', appointmentResponse);
         navigate('/patient/dashboard/appointments');
     } catch (error) {
         console.error('Full Error:', error);
-        setError(error.message);
+        setError(error.message || 'Failed to book appointment');
     }
   };
 

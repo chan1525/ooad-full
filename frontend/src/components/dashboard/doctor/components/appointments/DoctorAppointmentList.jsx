@@ -12,7 +12,14 @@ import {
   Chip,
   Button,
   Box,
-  CircularProgress
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import PrescriptionForm from '../prescriptions/PrescriptionForm';
 
@@ -22,6 +29,15 @@ const DoctorAppointmentList = () => {
   const [loading, setLoading] = useState(true);
   const doctorId = localStorage.getItem('userId');
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [openReschedule, setOpenReschedule] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   useEffect(() => {
     fetchAppointments();
@@ -54,33 +70,101 @@ const DoctorAppointmentList = () => {
   const handleStatusUpdate = async (appointmentId, newStatus) => {
     try {
       setError('');
-      const response = await fetch(`http://localhost:8080/api/appointments/${appointmentId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
+      if (newStatus === 'CANCELLED') {
+        const response = await fetch(`http://localhost:8080/api/appointments/${appointmentId}/cancel`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
 
-      if (response.ok) {
-        await fetchAppointments();
+        const data = await response.json().catch(() => null); // Handle empty response
+        
+        if (response.ok) {
+          await fetchAppointments();
+          setSnackbar({
+            open: true,
+            message: data?.message || 'Appointment cancelled successfully',
+            severity: 'success'
+          });
+        } else {
+          throw new Error(data?.message || 'Failed to cancel appointment');
+        }
       } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to update appointment status');
+        const response = await fetch(`http://localhost:8080/api/appointments/${appointmentId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
+
+        if (response.ok) {
+          await fetchAppointments();
+        } else {
+          const data = await response.json();
+          setError(data.message || 'Failed to update appointment status');
+        }
       }
     } catch (error) {
       console.error('Error:', error);
-      setError('Error connecting to server');
+      setSnackbar({
+        open: true,
+        message: error.message || 'Error connecting to server',
+        severity: 'error'
+      });
     }
   };
 
   const getStatusChip = (status) => {
     const colors = {
-      UPCOMING: 'primary',
+      SCHEDULED: 'primary',
       COMPLETED: 'success',
       CANCELLED: 'error'
     };
     return <Chip label={status} color={colors[status] || 'default'} size="small" />;
+  };
+
+  const openRescheduleDialog = (appointment) => {
+    setSelectedAppointment(appointment);
+    setNewDate(appointment.appointmentDate);
+    setNewTime(appointment.appointmentTime);
+    setOpenReschedule(true);
+  };
+
+  const handleReschedule = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/appointments/${selectedAppointment.id}/reschedule`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          newDate: newDate,
+          newTime: newTime
+        })
+      });
+
+      if (response.ok) {
+        setOpenReschedule(false);
+        setSnackbar({
+          open: true,
+          message: 'Appointment rescheduled successfully',
+          severity: 'success'
+        });
+        fetchAppointments(); // Refresh the list
+      } else {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to reschedule appointment');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setSnackbar({
+        open: true,
+        message: error.message,
+        severity: 'error'
+      });
+    }
   };
 
   if (loading) {
@@ -123,15 +207,15 @@ const DoctorAppointmentList = () => {
             <TableBody>
               {appointments.map((appointment) => (
                 <TableRow key={appointment.id}>
-                  <TableCell>{appointment.patient?.name || 'N/A'}</TableCell>
-                  <TableCell>{appointment.patient?.email || 'N/A'}</TableCell>
+                  <TableCell>{appointment.patientName}</TableCell>
+                  <TableCell>{appointment.patientEmail || 'N/A'}</TableCell>
                   <TableCell>{appointment.appointmentDate}</TableCell>
                   <TableCell>{appointment.appointmentTime}</TableCell>
                   <TableCell>{appointment.department}</TableCell>
                   <TableCell>{appointment.reason}</TableCell>
                   <TableCell>{getStatusChip(appointment.status)}</TableCell>
                   <TableCell>
-                    {appointment.status === 'UPCOMING' && (
+                    {appointment.status === 'SCHEDULED' && (
                       <Box>
                         <Button
                           size="small"
@@ -140,6 +224,14 @@ const DoctorAppointmentList = () => {
                           sx={{ mr: 1 }}
                         >
                           Complete
+                        </Button>
+                        <Button
+                          size="small"
+                          color="warning"
+                          onClick={() => openRescheduleDialog(appointment)}
+                          sx={{ mr: 1 }}
+                        >
+                          Reschedule
                         </Button>
                         <Button
                           size="small"
@@ -171,6 +263,52 @@ const DoctorAppointmentList = () => {
           onPrescriptionCreated={() => setSelectedPatient(null)}
         />
       )}
+
+      <Dialog open={openReschedule} onClose={() => setOpenReschedule(false)}>
+        <DialogTitle>Reschedule Appointment</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Date"
+            type="date"
+            value={newDate}
+            onChange={(e) => setNewDate(e.target.value)}
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            inputProps={{
+              min: new Date().toISOString().split('T')[0] // Disable past dates
+            }}
+          />
+          <TextField
+            label="Time"
+            type="time"
+            value={newTime}
+            onChange={(e) => setNewTime(e.target.value)}
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenReschedule(false)}>Cancel</Button>
+          <Button onClick={handleReschedule} color="primary">
+            Reschedule
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert 
+          severity={snackbar.severity} 
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

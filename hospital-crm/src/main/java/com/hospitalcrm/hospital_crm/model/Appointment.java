@@ -3,110 +3,48 @@ package com.hospitalcrm.hospital_crm.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import lombok.Data;
 
 @Entity
 @Table(name = "appointments")
+@Data
 public class Appointment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "patient_id")
-    private User patient;
+    @Column(name = "patient_id")
+    private Long patientId;
 
-    @ManyToOne
-    @JoinColumn(name = "doctor_id")
-    private User doctor;
+    @Column(name = "doctor_id")
+    private Long doctorId;
 
-    private String appointmentDate;
-    private String appointmentTime;
-    @Enumerated(EnumType.STRING)
-    private AppointmentStatus status;
     private String department;
+    
+    @Column(name = "appointment_date")
+    private String appointmentDate;
+    
+    @Column(name = "appointment_time")
+    private String appointmentTime;
+    
     private String reason;
-    private String patientName;
+    
+    @Column(name = "doctor_name")
     private String doctorName;
+    
+    @Column(name = "patient_name")
+    private String patientName;
 
-    // Getters
-    public Long getId() {
-        return id;
-    }
+    @Transient  // This means the field won't be stored in the database
+    private String patientEmail;
 
-    public User getPatient() {
-        return patient;
-    }
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
-    public User getDoctor() {
-        return doctor;
-    }
+    private boolean paid = false;
+    private Double amount = 500.0;
 
-    public String getAppointmentDate() {
-        return appointmentDate;
-    }
-
-    public String getAppointmentTime() {
-        return appointmentTime;
-    }
-
-    public AppointmentStatus getStatus() {
-        return status;
-    }
-
-    public String getDepartment() {
-        return department;
-    }
-
-    public Long getPatientId() {
-        return patient != null ? patient.getId() : null;
-    }
-
-    public Long getDoctorId() {
-        return doctor != null ? doctor.getId() : null;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    // Setters
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public void setPatient(User patient) {
-        this.patient = patient;
-    }
-
-    public void setDoctor(User doctor) {
-        this.doctor = doctor;
-    }
-
-    public void setAppointmentDate(String appointmentDate) {
-        this.appointmentDate = appointmentDate;
-    }
-
-    public void setAppointmentTime(String appointmentTime) {
-        this.appointmentTime = appointmentTime;
-    }
-
-    public void setStatus(AppointmentStatus status) {
-        this.status = status;
-    }
-
-    public void setDepartment(String department) {
-        this.department = department;
-    }
-
-    public void setPatientName(String patientName) {
-        this.patientName = patientName;
-    }
-
-    public void setDoctorName(String doctorName) {
-        this.doctorName = doctorName;
-    }
-
-    public void setReason(String reason) {
-        this.reason = reason;
+    public enum Status {
+        SCHEDULED, COMPLETED, CANCELLED
     }
 }
