@@ -67,7 +67,11 @@ const StaffAppointmentList = () => {
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/staff/appointments');
+      const response = await fetch('http://localhost:8080/api/staff/appointments', {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch appointments');
       }
@@ -80,7 +84,13 @@ const StaffAppointmentList = () => {
 
   const fetchDoctors = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/doctors');
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/doctors', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch doctors');
       }
@@ -93,7 +103,13 @@ const StaffAppointmentList = () => {
 
   const fetchPatients = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/staff/patients');
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/staff/patients', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch patients');
       }
@@ -140,6 +156,7 @@ const StaffAppointmentList = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const token = localStorage.getItem('token');
       const url = selectedAppointment
         ? `http://localhost:8080/api/staff/appointments/${selectedAppointment.id}`
         : 'http://localhost:8080/api/staff/appointments';
@@ -149,6 +166,7 @@ const StaffAppointmentList = () => {
       const response = await fetch(url, {
         method: method,
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData)
@@ -169,8 +187,13 @@ const StaffAppointmentList = () => {
   const handleDelete = async (appointmentId) => {
     if (window.confirm('Are you sure you want to delete this appointment?')) {
       try {
+        const token = localStorage.getItem('token');
         const response = await fetch(`http://localhost:8080/api/staff/appointments/${appointmentId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
 
         if (!response.ok) {

@@ -92,17 +92,26 @@ public class AppointmentService {
 
     public List<Appointment> getAllAppointments() {
         List<Appointment> appointments = appointmentRepository.findAll();
+        
+        // Enhance appointments with patient and doctor names
         for (Appointment appointment : appointments) {
-            User patient = userRepository.findById(appointment.getPatientId()).orElse(null);
-            User doctor = userRepository.findById(appointment.getDoctorId()).orElse(null);
-            
-            if (patient != null) {
-                appointment.setPatientName(patient.getName());
-            }
-            if (doctor != null) {
-                appointment.setDoctorName(doctor.getName());
+            try {
+                // Only try to fetch names if IDs are not null
+                if (appointment.getPatientId() != null) {
+                    userRepository.findById(appointment.getPatientId())
+                        .ifPresent(patient -> appointment.setPatientName(patient.getName()));
+                }
+                
+                if (appointment.getDoctorId() != null) {
+                    userRepository.findById(appointment.getDoctorId())
+                        .ifPresent(doctor -> appointment.setDoctorName(doctor.getName()));
+                }
+            } catch (Exception e) {
+                logger.error("Error enhancing appointment data: " + e.getMessage());
+                // Continue with next appointment instead of failing
             }
         }
+        
         return appointments;
     }
 

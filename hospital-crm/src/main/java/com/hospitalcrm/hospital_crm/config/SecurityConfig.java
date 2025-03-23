@@ -12,6 +12,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import java.util.Arrays;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -23,11 +24,15 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.GET, "/api/staff/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/staff/**").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/staff/**").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/api/staff/**").permitAll()
+                .requestMatchers("/api/staff/appointments/**").permitAll()
                 .requestMatchers("/api/appointments/**").permitAll()
                 .requestMatchers("/api/appointments/*/cancel").permitAll()
                 .requestMatchers("/api/medical-records/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/staff/**").permitAll()
                 .requestMatchers("/api/doctors/**").permitAll()
                 .requestMatchers("/api/patients/**").permitAll()
                 .requestMatchers("/api/prescriptions/**").permitAll()
