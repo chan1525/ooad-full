@@ -44,4 +44,29 @@ public class PaymentService {
     public List<Appointment> getUnpaidAppointments(Long patientId) {
         return appointmentRepository.findByPatientIdAndPaidFalse(patientId);
     }
+
+    public List<Payment> getAllPayments() {
+        // Get all appointments that need payment
+        List<Appointment> unpaidAppointments = appointmentRepository.findByPaid(false);
+        
+        // Create pending payments for unpaid appointments if they don't exist
+        for (Appointment appointment : unpaidAppointments) {
+            Payment existingPayment = paymentRepository.findByAppointmentId(appointment.getId());
+            if (existingPayment == null) {
+                Payment pendingPayment = new Payment();
+                pendingPayment.setPatientId(appointment.getPatientId());
+                pendingPayment.setAppointmentId(appointment.getId());
+                pendingPayment.setAmount(500.0);
+                pendingPayment.setStatus(Payment.PaymentStatus.PENDING);
+                pendingPayment.setDescription("Appointment Payment");
+                paymentRepository.save(pendingPayment);
+            }
+        }
+
+        return paymentRepository.findAll();
+    }
+
+    public long getPendingPaymentsCount() {
+        return appointmentRepository.countByPaid(false);
+    }
 }

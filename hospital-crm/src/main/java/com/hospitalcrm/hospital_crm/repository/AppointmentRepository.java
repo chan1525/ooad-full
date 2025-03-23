@@ -15,4 +15,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     
     @Query("SELECT DISTINCT u FROM User u JOIN Appointment a ON u.id = a.patientId WHERE a.doctorId = :doctorId")
     List<User> findDistinctPatientsByDoctorId(Long doctorId);
+
+    List<Appointment> findByPaid(boolean paid);
+    long countByPaid(boolean paid);
+
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.paid = false")
+    long countUnpaidAppointments();
 }

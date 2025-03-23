@@ -4,12 +4,14 @@ public class DashboardStatsDTO {
     private long totalPatients;
     private long totalAppointments;
     private long totalDoctors;
+    private long pendingPayments;
 
     // Constructor
-    public DashboardStatsDTO(long totalPatients, long totalAppointments, long totalDoctors) {
+    public DashboardStatsDTO(long totalPatients, long totalAppointments, long totalDoctors, long pendingPayments) {
         this.totalPatients = totalPatients;
         this.totalAppointments = totalAppointments;
         this.totalDoctors = totalDoctors;
+        this.pendingPayments = pendingPayments;
     }
 
     // Getters and setters
@@ -35,5 +37,13 @@ public class DashboardStatsDTO {
 
     public void setTotalDoctors(long totalDoctors) {
         this.totalDoctors = totalDoctors;
+    }
+
+    public long getPendingPayments() {
+        return pendingPayments;
+    }
+
+    public void setPendingPayments(long pendingPayments) {
+        this.pendingPayments = pendingPayments;
     }
 } 

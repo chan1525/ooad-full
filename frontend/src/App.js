@@ -25,6 +25,7 @@ import Payments from './components/dashboard/patient/components/payments/Payment
 import StaffPatientList from './components/dashboard/staff/components/patients/PatientList';
 import StaffAppointmentList from './components/dashboard/staff/components/appointments/StaffAppointmentList';
 import StaffDoctorList from './components/dashboard/staff/components/doctors/StaffDoctorList';
+import StaffPaymentList from './components/dashboard/staff/components/payments/StaffPaymentList';
 
 // Doctor Components
 import DoctorAppointmentList from './components/dashboard/doctor/components/appointments/DoctorAppointmentList';
@@ -64,6 +65,7 @@ function App() {
         <Route path="patients" element={<StaffPatientList />} />
         <Route path="appointments" element={<StaffAppointmentList />} />
         <Route path="doctors" element={<StaffDoctorList />} />
+        <Route path="payments" element={<StaffPaymentList />} />
       </Route>
     </Routes>
   );

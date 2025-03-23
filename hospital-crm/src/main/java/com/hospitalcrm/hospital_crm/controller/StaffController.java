@@ -11,6 +11,9 @@ import com.hospitalcrm.hospital_crm.dto.DashboardStatsDTO;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import java.util.Collections;
+import com.hospitalcrm.hospital_crm.repository.PaymentRepository;
+import com.hospitalcrm.hospital_crm.model.Payment;
+import com.hospitalcrm.hospital_crm.service.PaymentService;
 
 @RestController
 @RequestMapping("/api/staff")
@@ -26,17 +29,25 @@ public class StaffController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private PaymentService paymentService;
+
     @GetMapping("/dashboard-stats")
     public ResponseEntity<DashboardStatsDTO> getDashboardStats() {
         try {
             long totalPatients = userRepository.countByRole("PATIENT");
             long totalDoctors = userRepository.countByRole("DOCTOR");
             long totalAppointments = appointmentRepository.count();
+            long pendingPayments = appointmentRepository.countByPaid(false);
 
             DashboardStatsDTO stats = new DashboardStatsDTO(
                 totalPatients,
                 totalAppointments,
-                totalDoctors
+                totalDoctors,
+                pendingPayments
             );
 
             return ResponseEntity.ok(stats);
